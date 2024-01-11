@@ -39,6 +39,8 @@ def scan_plex_libraries(plex_url, plex_token, libraries):
 client = TelegramClient('session_name', api_id, api_hash)
 client.start(bot_token=bot_token)
 
+print(f"成功连接到 Telegram。开始监测频道：{channel_username}")
+
 @client.on(events.NewMessage(chats=channel_username))
 async def new_message_listener(event):
     print("检测到新消息，触发 Plex 指定媒体库的扫描")
