@@ -1,6 +1,13 @@
 from telethon import TelegramClient, events
 import requests
 import os
+import schedule
+import asyncio
+import datetime
+
+
+# 环境变量中读取的定时扫描时间（格式为 HH:MM）
+scan_time = os.getenv('SCAN_TIME', '')  # 默认为空
 
 # 从环境变量读取配置
 api_id = os.getenv('API_ID')
@@ -19,6 +26,10 @@ if libraries_config:
         lib_id, lib_name = lib.split(':')
         libraries[lib_id.strip()] = lib_name.strip()
 
+def scheduled_scan():
+    print(f"定时扫描启动 - {datetime.datetime.now()}")
+    scan_plex_libraries(plex_url, plex_token, libraries)
+
 def send_telegram_message(bot_token, chat_id, message):
     send_text = f'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&parse_mode=Markdown&text={message}'
     response = requests.get(send_text)
@@ -35,9 +46,20 @@ def scan_plex_libraries(plex_url, plex_token, libraries):
         else:
             print(f"Plex 媒体库 '{library_name}' 扫描失败，错误码：{response.status_code}")
 
+# 定时任务设置
+if scan_time:
+    schedule.every().day.at(scan_time).do(scheduled_scan)
+
 # 使用 Bot Token 启动客户端
 client = TelegramClient('session_name', api_id, api_hash)
 client.start(bot_token=bot_token)
+
+async def run_scheduled_tasks():
+    while True:
+        schedule.run_pending()
+        await asyncio.sleep(1)
+
+client.loop.create_task(run_scheduled_tasks())
 
 print(f"成功连接到 Telegram。开始监测频道：{channel_username}")
 
