@@ -4,13 +4,13 @@ services:
   tg-plex-scanner:
     image: vectorzhao/tg-plex-scanner:latest
     environment:
-      API_ID: "5202929"
-      API_HASH: "c7366cb9241d4181bcc248436dab033e"
-      BOT_TOKEN: "6098884372:AAGaeaIIzT9cJIaAja9yq13E1zzG5kFeQw4"
-      CHAT_ID: "762394206"
+      API_ID: ""
+      API_HASH: ""
+      BOT_TOKEN: ""
+      CHAT_ID: ""
       PLEX_URL: "http://192.168.125.15:32400"
-      PLEX_TOKEN: "ys485arTss3ornimEmZP"
-      LIBRARIES_CONFIG: "28:最新电影,27:最新剧集"  # 以逗号分隔的库 ID 和名称列表
-      CHANNEL_USERNAME: "umziebook"  # 频道用户名
-      SCAN_TIME: "19:00"  # 定时扫描时间（格式为 HH:MM）
+      PLEX_TOKEN: ""
+      LIBRARIES_CONFIG: "28:最新电影,27:最新剧集,34:阿里云电影,33:阿里云电视剧"  # 以逗号分隔的库 ID 和名称列表
+      CHANNEL_USERNAME: ""  # 需监控频道的名称（不包含 @ 符号）
+      SCAN_TIME: ""  # 定时扫描时间（格式为 HH:MM）
     restart: unless-stopped
