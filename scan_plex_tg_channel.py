@@ -1,9 +1,13 @@
+import logging
 from telethon import TelegramClient, events
 import requests
 import os
 import schedule
 import asyncio
 import datetime
+
+# 设置日志记录
+logging.basicConfig(level=logging.DEBUG)
 
 # 从环境变量读取配置
 api_id = os.getenv('API_ID')
@@ -50,16 +54,23 @@ else:
 client = TelegramClient('anon', api_id, api_hash)
 
 async def start_telegram_client():
+    print("Attempting to start Telegram client...")
     try:
-        await client.start(bot_token=bot_token)
-        print(f"Telegram 已连接成功。")
-        print(f"监控频道为：{channel_username}")
-        if libraries:
-            print(f"Plex 扫描目录为：{', '.join(libraries.values())}")
-        else:
-            print("没有配置 Plex 扫描目录。")
+        await asyncio.wait_for(client.start(bot_token=bot_token), timeout=30)
+        print("Telegram client successfully connected.")
+        
+        # 检查用户是否授权
+        if not await client.is_user_authorized():
+            print("Telegram client is not authorized. Exiting...")
+            return False
+    except asyncio.TimeoutError:
+        print("Telegram client connection timed out.")
+        return False
     except Exception as e:
-        print(f"Failed to start Telegram client: {e}")
+        print(f"Failed to start the Telegram client: {e}")
+        return False
+
+    return True
 
 async def run_scheduled_tasks():
     while True:
@@ -70,12 +81,18 @@ async def run_scheduled_tasks():
         await asyncio.sleep(1)
 
 async def main():
-    await start_telegram_client()
+    print("Starting main function.")
+    if not await start_telegram_client():
+        print("Exiting due to Telegram client failure.")
+        return
+
+    print("Telegram client started.")
     client.loop.create_task(run_scheduled_tasks())
+    print("Scheduled tasks set up.")
 
     @client.on(events.NewMessage(chats=channel_username))
     async def new_message_listener(event):
-        print("检测到新消息，触发 Plex 指定媒体库的扫描。")
+        print("Detected new message, triggering Plex library scan.")
         scan_plex_libraries(plex_url, plex_token, libraries)
 
     await client.run_until_disconnected()
