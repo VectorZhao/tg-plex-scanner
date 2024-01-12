@@ -3,6 +3,8 @@ version: '3.8'
 services:
   tg-plex-scanner:
     image: vectorzhao/tg-plex-scanner:latest
+    container_name: tg-plex-scanner
+    network_mode: host
     environment:
       API_ID: ""
       API_HASH: ""
