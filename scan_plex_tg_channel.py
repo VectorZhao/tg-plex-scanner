@@ -21,6 +21,13 @@ channel_username = os.getenv('CHANNEL_USERNAME')  # 需要用户设置
 scan_time = os.getenv('SCAN_TIME')  # 定时扫描时间，用户可设置
 session_file = os.getenv('SESSION_FILE')  # Telegram 会话文件的路径
 
+
+session_file = os.getenv('SESSION_FILE')  # Telegram 会话文件的路径
+if not session_file or not os.path.exists(session_file):
+    print("Session file is required but not found. Exiting...")
+    exit(1)
+
+
 # 解析媒体库配置
 libraries = {}
 if libraries_config:
@@ -52,7 +59,9 @@ else:
     print("定时任务未开启。")
 
 # 使用 Bot Token 启动客户端
-client = TelegramClient(session_file if session_file else 'anon', api_id, api_hash)
+
+
+client = TelegramClient(session_file, api_id, api_hash)
 
 async def start_telegram_client():
     print("Attempting to start Telegram client...")
