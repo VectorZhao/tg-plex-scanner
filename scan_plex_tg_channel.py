@@ -67,6 +67,7 @@ client = TelegramClient(session_file, api_id, api_hash)
 # 监听新消息事件
 @client.on(events.NewMessage(chats=channel_username))
 async def new_message_listener(event):
+    print('有新消息！')
     logging.info("检测到新消息，触发Plex库扫描。")
     message = '检测到新消息，开始执行Plex库扫描。'
     send_telegram_message(bot_token, chat_id, message)
