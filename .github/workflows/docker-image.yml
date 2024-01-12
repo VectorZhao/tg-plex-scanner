@@ -30,8 +30,9 @@ jobs:
         tags: vectorzhao/tg-plex-scanner:latest
         platforms: linux/amd64,linux/arm64
     - name: Send Telegram Notification
-        run: |
-          curl -X POST \
-            https://api.telegram.org/bot6098884372:AAGaeaIIzT9cJIaAja9yq13E1zzG5kFeQw4/sendMessage \
-            -d chat_id=762394206 \
-            -d text="tg-plex-scanner 镜像构建完成。版本：latest
+      if: success()
+      run: |
+        curl -X POST \
+             -H 'Content-Type: application/json' \
+             -d '{"chat_id": "${{ secrets.TELEGRAM_CHAT_ID }}", "text": "✅ tg-plex-scanner:latest 镜像编译完成。", "disable_notification": true}' \
+             https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
