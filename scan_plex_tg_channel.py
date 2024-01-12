@@ -1,10 +1,11 @@
 import logging
-from telethon import TelegramClient, events
 import requests
 import os
 import schedule
-import asyncio
+import time
 import datetime
+from telethon import TelegramClient, events
+
 
 # 设置日志记录
 logging.basicConfig(level=logging.DEBUG)
@@ -21,86 +22,65 @@ channel_username = os.getenv('CHANNEL_USERNAME')  # 需要用户设置
 scan_time = os.getenv('SCAN_TIME')  # 定时扫描时间，用户可设置
 session_file = os.getenv('SESSION_FILE')  # Telegram 会话文件的路径
 
-
-session_file = os.getenv('SESSION_FILE')  # Telegram 会话文件的路径
+# 确保session文件存在
 if not session_file or not os.path.exists(session_file):
-    print("Session file is required but not found. Exiting...")
+    logging.error("Session file is required but not found. Exiting...")
     exit(1)
-
 
 # 解析媒体库配置
 libraries = {}
 if libraries_config:
     libraries = dict(lib.split(':') for lib in libraries_config.split(','))
 
+# 发送Telegram消息的函数
 def send_telegram_message(bot_token, chat_id, message):
     send_text = f'https://api.telegram.org/bot{bot_token}/sendMessage?chat_id={chat_id}&parse_mode=Markdown&text={message}'
     response = requests.get(send_text)
     return response.json()
 
+# 扫描Plex媒体库的函数
 def scan_plex_libraries(plex_url, plex_token, libraries):
     for library_id, library_name in libraries.items():
+        scan_message = f"📢 检测到{channel_username}有新消息，开始触发 Plex 扫库: {library_name}"
+        send_telegram_message(bot_token, chat_id, scan_message)
         scan_url = f"{plex_url}/library/sections/{library_id}/refresh?X-Plex-Token={plex_token}"
         response = requests.get(scan_url)
         if response.status_code == 200:
-            print(f"Plex 媒体库 '{library_name}' 扫描已启动。")
+            logging.info(f"Plex 媒体库 '{library_name}' 扫描已启动。")
         else:
-            print(f"Plex 媒体库 '{library_name}' 扫描失败，错误码：{response.status_code}。")
+            logging.error(f"Plex 媒体库 '{library_name}' 扫描失败，错误码：{response.status_code}。")
 
+# 定时扫描的函数
 def scheduled_scan():
-    print(f"定时扫描任务启动 - {datetime.datetime.now()}")
+    logging.info(f"定时扫描任务启动 - {datetime.datetime.now()}")
     scan_plex_libraries(plex_url, plex_token, libraries)
 
-# 定时任务设置
+# 设置定时任务
 if scan_time:
     schedule.every().day.at(scan_time).do(scheduled_scan)
-    print(f"定时任务已开启：{scan_time}")
+    logging.info(f"定时任务已设置：{scan_time}")
 else:
-    print("定时任务未开启。")
+    logging.info("未设置定时任务。")
 
-# 使用 Bot Token 启动客户端
-
-
+# 创建并启动Telegram客户端
 client = TelegramClient(session_file, api_id, api_hash)
 
-async def start_telegram_client():
-    print("Attempting to start Telegram client...")
-    try:
-        await asyncio.wait_for(client.start(), timeout=30)
-        print("Telegram client successfully connected.")
-    except asyncio.TimeoutError:
-        print("Telegram client connection timed out.")
-        return False
-    except Exception as e:
-        print(f"Failed to start the Telegram client: {e}")
-        return False
+# 监听新消息事件
+@client.on(events.NewMessage(chats=channel_username))
+def new_message_listener(event):
+    logging.info("检测到新消息，触发Plex库扫描。")
+    scan_plex_libraries(plex_url, plex_token, libraries)
 
-    return True
+# 执行脚本的主要部分
+def main():
+    client.start()
+    logging.info("Telegram客户端启动。")
 
-async def run_scheduled_tasks():
+    # 设置并启动定时任务
     while True:
-        try:
-            schedule.run_pending()
-        except Exception as e:
-            print(f"Error during scheduled task: {e}")
-        await asyncio.sleep(1)
+        schedule.run_pending()
+        time.sleep(1)
 
-async def main():
-    print("Starting main function.")
-    if not await start_telegram_client():
-        print("Exiting due to Telegram client failure.")
-        return
-
-    print("Telegram client started.")
-    client.loop.create_task(run_scheduled_tasks())
-    print("Scheduled tasks set up.")
-
-    @client.on(events.NewMessage(chats=channel_username))
-    async def new_message_listener(event):
-        print("Detected new message, triggering Plex library scan.")
-        scan_plex_libraries(plex_url, plex_token, libraries)
-
-    await client.run_until_disconnected()
-
+# 执行主函数
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
