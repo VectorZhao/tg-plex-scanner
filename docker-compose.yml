@@ -12,4 +12,5 @@ services:
       PLEX_TOKEN: "ys485arTss3ornimEmZP"
       LIBRARIES_CONFIG: "28:最新电影,27:最新剧集"  # 以逗号分隔的库 ID 和名称列表
       CHANNEL_USERNAME: "umziebook"  # 频道用户名
+      SCAN_TIME: "19:00"  # 定时扫描时间（格式为 HH:MM）
     restart: unless-stopped
