@@ -15,4 +15,7 @@ services:
       LIBRARIES_CONFIG: "28:最新电影,27:最新剧集,34:阿里云电影,33:阿里云电视剧"  # 以逗号分隔的库 ID 和名称列表
       CHANNEL_USERNAME: ""  # 需监控频道的名称（不包含 @ 符号）
       SCAN_TIME: ""  # 定时扫描时间（格式为 HH:MM）
+      SESSION_FILE: "/app/session.session"  # 设置环境变量指向会话文件
+    volumes:
+      - ./session.session:/app/session.session  # 映射当前目录的会话文件到容器内部
     restart: unless-stopped

@@ -19,6 +19,7 @@ plex_url = os.getenv('PLEX_URL')
 libraries_config = os.getenv('LIBRARIES_CONFIG', '')  # 默认为空字符串
 channel_username = os.getenv('CHANNEL_USERNAME')  # 需要用户设置
 scan_time = os.getenv('SCAN_TIME')  # 定时扫描时间，用户可设置
+session_file = os.getenv('SESSION_FILE')  # Telegram 会话文件的路径
 
 # 解析媒体库配置
 libraries = {}
@@ -51,18 +52,13 @@ else:
     print("定时任务未开启。")
 
 # 使用 Bot Token 启动客户端
-client = TelegramClient('anon', api_id, api_hash)
+client = TelegramClient(session_file if session_file else 'anon', api_id, api_hash)
 
 async def start_telegram_client():
     print("Attempting to start Telegram client...")
     try:
-        await asyncio.wait_for(client.start(phone=lambda: input('请输入手机号码: '), code_callback=lambda: input('请输入验证码: ')), timeout=30)
+        await asyncio.wait_for(client.start(), timeout=30)
         print("Telegram client successfully connected.")
-        
-        # 检查用户是否授权
-        if not await client.is_user_authorized():
-            print("Telegram client is not authorized. Exiting...")
-            return False
     except asyncio.TimeoutError:
         print("Telegram client connection timed out.")
         return False
