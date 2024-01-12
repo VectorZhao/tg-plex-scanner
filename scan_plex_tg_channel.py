@@ -2,10 +2,9 @@ import logging
 import requests
 import os
 import schedule
-import time
+import asyncio
 import datetime
 from telethon import TelegramClient, events
-
 
 # 设置日志记录
 logging.basicConfig(level=logging.DEBUG)
@@ -30,7 +29,9 @@ if not session_file or not os.path.exists(session_file):
 # 解析媒体库配置
 libraries = {}
 if libraries_config:
-    libraries = dict(lib.split(':') for lib in libraries_config.split(','))
+    for lib in libraries_config.split(','):
+        lib_id, lib_name = lib.split(':')
+        libraries[lib_id.strip()] = lib_name.strip()
 
 # 发送Telegram消息的函数
 def send_telegram_message(bot_token, chat_id, message):
@@ -41,8 +42,6 @@ def send_telegram_message(bot_token, chat_id, message):
 # 扫描Plex媒体库的函数
 def scan_plex_libraries(plex_url, plex_token, libraries):
     for library_id, library_name in libraries.items():
-        scan_message = f"📢 检测到{channel_username}有新消息，开始触发 Plex 扫库: {library_name}"
-        send_telegram_message(bot_token, chat_id, scan_message)
         scan_url = f"{plex_url}/library/sections/{library_id}/refresh?X-Plex-Token={plex_token}"
         response = requests.get(scan_url)
         if response.status_code == 200:
@@ -51,13 +50,13 @@ def scan_plex_libraries(plex_url, plex_token, libraries):
             logging.error(f"Plex 媒体库 '{library_name}' 扫描失败，错误码：{response.status_code}。")
 
 # 定时扫描的函数
-def scheduled_scan():
+async def scheduled_scan():
     logging.info(f"定时扫描任务启动 - {datetime.datetime.now()}")
     scan_plex_libraries(plex_url, plex_token, libraries)
 
 # 设置定时任务
 if scan_time:
-    schedule.every().day.at(scan_time).do(scheduled_scan)
+    schedule.every().day.at(scan_time).do(lambda: asyncio.create_task(scheduled_scan()))
     logging.info(f"定时任务已设置：{scan_time}")
 else:
     logging.info("未设置定时任务。")
@@ -67,20 +66,26 @@ client = TelegramClient(session_file, api_id, api_hash)
 
 # 监听新消息事件
 @client.on(events.NewMessage(chats=channel_username))
-def new_message_listener(event):
+async def new_message_listener(event):
     logging.info("检测到新消息，触发Plex库扫描。")
-    scan_plex_libraries(plex_url, plex_token, libraries)
+    await asyncio.create_task(scheduled_scan())
 
 # 执行脚本的主要部分
-def main():
-    client.start()
+async def main():
+    await client.start()
     logging.info("Telegram客户端启动。")
 
-    # 设置并启动定时任务
+    # 启动定时任务
+    client.loop.create_task(run_scheduled_tasks())
+
+    # 运行直到断开连接
+    await client.run_until_disconnected()
+
+# 运行定时任务的异步函数
+async def run_scheduled_tasks():
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        await asyncio.sleep(1)
 
 # 执行主函数
 if __name__ == '__main__':
-    main()
