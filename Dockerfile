@@ -11,4 +11,4 @@ COPY scan_plex_tg_channel.py .
 RUN pip install --no-cache-dir telethon requests schedule
 
 # 运行脚本
-CMD ["python", "scan_plex_tg_channel.py"]
+CMD ["python", "-u", "scan_plex_tg_channel.py"]
