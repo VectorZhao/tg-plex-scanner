@@ -56,7 +56,7 @@ client = TelegramClient('anon', api_id, api_hash)
 async def start_telegram_client():
     print("Attempting to start Telegram client...")
     try:
-        await asyncio.wait_for(client.start(bot_token=bot_token), timeout=30)
+        await asyncio.wait_for(client.start(phone=lambda: input('请输入手机号码: '), code_callback=lambda: input('请输入验证码: ')), timeout=30)
         print("Telegram client successfully connected.")
         
         # 检查用户是否授权
