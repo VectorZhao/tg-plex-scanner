@@ -68,6 +68,8 @@ client = TelegramClient(session_file, api_id, api_hash)
 @client.on(events.NewMessage(chats=channel_username))
 async def new_message_listener(event):
     logging.info("检测到新消息，触发Plex库扫描。")
+    message = '检测到新消息，开始执行Plex库扫描。'
+    send_telegram_message(bot_token, chat_id, message)
     await asyncio.create_task(scheduled_scan())
 
 # 执行脚本的主要部分
